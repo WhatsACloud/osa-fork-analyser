@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSA Fork Analyser</title>
+    <meta name="description" content="Find the forks of a GitHub repository that did real work, and classify what each one changed." />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' https://api.github.com https://api.openai.com; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'"
+    />
+    <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/osa-logo.png" />
+    <meta name="theme-color" content="#eaf4fc" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="./">
+          <img src="assets/osa-logo.png" alt="" width="44" height="44" />
+          <span>OSA Fork Analyser</span>
+        </a>
+        <nav class="topnav">
+          <a data-source-link target="_blank" rel="noopener noreferrer">Source</a>
+          <button type="button" id="theme-toggle" class="nav-btn">☾ Dark</button>
+          <button type="button" class="nav-btn" data-open-settings>⚙ Settings</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <form id="repo-form" class="searchbar" autocomplete="off">
+        <button type="button" class="searchbar-icon" data-open-settings aria-label="Settings">⚙</button>
+        <label class="visually-hidden" for="repo-input">Repository to find forks of</label>
+        <input id="repo-input" name="repo" placeholder="owner/repo or https://github.com/owner/repo" required spellcheck="false" />
+        <button type="submit" id="fetch-btn" class="searchbar-submit">
+          Fetch forks
+          <span id="api-badge" class="badge">0 calls</span>
+        </button>
+      </form>
+
+      <div class="toolbar">
+        <form id="add-fork-form" class="add-fork" autocomplete="off">
+          <label class="visually-hidden" for="fork-input">Fork URL to add</label>
+          <input id="fork-input" placeholder="Paste a fork URL to add it to the list" spellcheck="false" />
+          <button type="submit" id="add-btn">Add fork</button>
+        </form>
+        <div class="actions">
+          <button type="button" id="analyse-btn" class="primary">Analyse</button>
+          <button type="button" id="stop-btn" class="danger" hidden>Stop</button>
+          <button type="button" id="csv-btn">Download CSV</button>
+          <button type="button" id="clear-btn">Clear list</button>
+        </div>
+      </div>
+
+      <p id="status" class="status-line" role="status" aria-live="polite"></p>
+
+      <section id="intro" class="intro">
+        <div class="mascot">
+          <img src="assets/osa-mascot.png" alt="osa, a little monitor robot with a fork for an antenna" width="333" height="567" />
+        </div>
+        <h1>Which forks actually did something?</h1>
+        <p>
+          Enter a repository above and press <strong>Fetch forks</strong>. You get up to 50 of its
+          most-starred forks that have <strong>commits ahead of upstream</strong>; forks that were
+          never changed after being created are skipped.
+        </p>
+        <p>
+          You can also paste any fork's URL into the second box. Then press <strong>Analyse</strong>:
+          each fork's diff, commits and pull requests are read from GitHub, described by an LLM, and
+          labelled with what it changed (<em>feature</em>, <em>bugfix</em>, <em>system_port</em>…)
+          and why it exists (<em>contributing</em>, <em>vendor</em>, <em>divergent</em>…).
+        </p>
+        <p class="muted">
+          Everything runs in your browser. Your keys and results are stored only in this browser's
+          localStorage and are sent only to api.github.com and api.openai.com.
+        </p>
+      </section>
+
+      <div id="table-wrap" class="table-wrap" hidden>
+        <p id="list-summary" class="list-summary"></p>
+        <table class="fork-table">
+          <thead>
+            <tr>
+              <th scope="col">Fork</th>
+              <th scope="col">Status</th>
+              <th scope="col">What it changed</th>
+              <th scope="col">Why it exists</th>
+              <th scope="col">Summary</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="fork-rows"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <dialog id="settings-dialog" class="dialog">
+      <form method="dialog">
+        <h2>Settings</h2>
+        <p id="settings-notice" class="notice" hidden></p>
+
+        <label for="github-token">GitHub token</label>
+        <input id="github-token" name="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… or github_pat_…" />
+        <p class="hint">A classic token with no scopes, or a fine-grained token with public read access, is enough.</p>
+
+        <label for="openai-key">OpenAI API key</label>
+        <input id="openai-key" name="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" />
+        <p class="hint">Used only for <strong>Analyse</strong>. Each fork costs roughly a few cents.</p>
+
+        <label for="concurrency">Forks analysed at once</label>
+        <input id="concurrency" name="concurrency" type="number" min="1" max="10" step="1" />
+
+        <p class="warning">
+          Keys are saved in this browser's localStorage. Anyone with access to this browser profile,
+          or any extension that can read this page, can read them. Use a low-privilege token and
+          clear them on shared machines.
+        </p>
+
+        <div class="dialog-row">
+          <button type="button" id="forget-keys">Forget keys</button>
+          <button type="button" id="clear-results">Clear cached results</button>
+        </div>
+        <div class="dialog-actions">
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="save" class="primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "es2022",
+    "target": "es2022",
+    "checkJs": true,
+    "lib": ["es2023", "dom", "dom.iterable"]
+  },
+  "include": ["js/**/*.js"]
+}

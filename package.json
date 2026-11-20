@@ -1,0 +1,14 @@
+{
+  "name": "osa-fork-analyser",
+  "private": true,
+  "description": "Find the GitHub forks that did real work and classify what they changed. Static site, no build step.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve@14.2.4 -l 8000 .",
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
