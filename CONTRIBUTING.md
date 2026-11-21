@@ -1,19 +1,13 @@
 # Contributing
 
-Thanks for helping. The project is deliberately plain: HTML, CSS and native ES modules, no
-framework, no bundler, no runtime dependencies. If you can open a browser and run
-`python -m http.server`, you can work on it.
+Hey! Thanks for helping :D
+
+# Disclaimers
+1. This current codebase is basically entirely refactored by Claude Code, so if there's any hallucinations or nonsensical things just let me know or open an issue
 
 ## Getting set up
 
-```sh
-git clone <this repo>
-cd <this repo>
-python -m http.server 8000   # or: npm start
-```
-
-Open http://localhost:8000 and add a GitHub token (and an OpenAI key if you want to run
-analyses) under ⚙ Settings. Run `npm test` before opening a pull request.
+clone the repo, open the index.html
 
 ## How a fork gets analysed
 
