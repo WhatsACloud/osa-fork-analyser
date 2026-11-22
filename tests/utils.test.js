@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cleanResponse, parseJson } from '../js/analysis/llm.js';
-import { toCsv } from '../js/csv.js';
+import { forksToCsv, forksToFullCsv, parseForksCsv, toCsv } from '../js/csv.js';
 import { getCommitsOutsidePrs } from '../js/github/forkData.js';
 import { parseRepoRef } from '../js/github/repo.js';
 import { mapConcurrent, sleep } from '../js/queue.js';
@@ -34,6 +34,80 @@ test('toCsv quotes and neutralises formula-like text', () => {
     csv,
     'a,"has,comma","has ""quote""",,3\r\n' + `"'=HYPERLINK(""x"")",'-cmd,"line\nbreak",,0`,
   );
+});
+
+const FORK = {
+  fullName: 'alice/repo',
+  url: 'https://github.com/alice/repo',
+  parent: 'upstream/repo',
+  stars: 12,
+  aheadBy: 3,
+  behindBy: 1,
+  defaultBranch: 'main',
+  pushedAt: '2026-01-01T00:00:00Z',
+  description: 'a fork',
+  source: 'fetched',
+};
+
+const RESULT = {
+  status: 'complete',
+  engineeringLabel: 'feature',
+  upstreamLabel: 'divergent',
+  purposeSummary: 'adds a "cool" thing, with commas',
+  featureList: [
+    { name: 'thing one', description: 'does stuff\nacross lines', comes_from_upstream: false, filepaths_modified: ['a.js', 'b.js'] },
+    { name: 'thing two', description: '', comes_from_upstream: true, filepaths_modified: [] },
+  ],
+  signals: { adds_functionality: true, is_bugfix: false },
+  thoughtProcess: { evidence: ['saw a diff'], inference: ['probably a feature'] },
+  forkCreator: { username: 'alice', profile_summary: 'an active contributor' },
+  toolsUsed: [{ name: 'eslint', description: 'lints code', label: 'build' }],
+  usage: { inputTokens: 1000, outputTokens: 200, costUsd: 0.0123 },
+  durationMs: 4567,
+  analysedAt: '2026-01-02T00:00:00Z',
+};
+
+test('forksToCsv / parseForksCsv round-trip the minified columns', () => {
+  const csv = forksToCsv([FORK], { 'alice/repo': RESULT });
+  const { forks, results } = parseForksCsv(csv);
+  assert.equal(forks.length, 1);
+  assert.equal(forks[0].fullName, 'alice/repo');
+  assert.equal(forks[0].parent, 'upstream/repo');
+  assert.equal(forks[0].stars, 12);
+  assert.equal(forks[0].aheadBy, 3);
+
+  const r = results['alice/repo'];
+  assert.equal(r.status, 'complete');
+  assert.equal(r.engineeringLabel, 'feature');
+  assert.equal(r.purposeSummary, RESULT.purposeSummary);
+  assert.deepEqual(r.featureList.map((f) => f.name), ['thing one', 'thing two']);
+  // The minified format drops signals/reasoning/creator/tools — only names survive.
+  assert.deepEqual(r.signals, {});
+  assert.equal(r.usage.inputTokens, 1000);
+  assert.equal(r.usage.costUsd, 0.0123);
+});
+
+test('forksToFullCsv / parseForksCsv round-trip every detail field', () => {
+  const csv = forksToFullCsv([FORK], { 'alice/repo': RESULT });
+  const { results } = parseForksCsv(csv);
+  const r = results['alice/repo'];
+  assert.deepEqual(r.featureList, RESULT.featureList);
+  assert.deepEqual(r.signals, RESULT.signals);
+  assert.deepEqual(r.thoughtProcess, RESULT.thoughtProcess);
+  assert.deepEqual(r.forkCreator, RESULT.forkCreator);
+  assert.deepEqual(r.toolsUsed, RESULT.toolsUsed);
+  assert.equal(r.durationMs, 4567);
+  assert.equal(r.analysedAt, RESULT.analysedAt);
+});
+
+test('parseForksCsv skips unrecognisable rows and reports errors in memory only', () => {
+  const csv = forksToCsv(
+    [FORK, { ...FORK, fullName: 'bob/broken', url: 'not-a-url', parent: 'upstream/repo' }],
+    { 'alice/repo': { status: 'error', error: 'boom' } },
+  );
+  const { forks, results } = parseForksCsv(csv);
+  assert.equal(forks.length, 1); // the row with an unparsable fork_url is skipped
+  assert.deepEqual(results['alice/repo'], { status: 'error', error: 'boom' });
 });
 
 test('mapConcurrent keeps order and never exceeds the limit', async () => {

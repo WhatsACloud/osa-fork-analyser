@@ -1,4 +1,4 @@
-export const SOURCE_URL = 'https://github.com/WhatsACloud/nrp-osa-ai';
+export const SOURCE_URL = 'https://github.com/WhatsACloud/osa-fork-analyser';
 
 // Fork discovery
 export const MAX_FORKS = 50;

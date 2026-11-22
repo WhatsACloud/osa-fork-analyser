@@ -1,13 +1,39 @@
 # about this project
 
-OSA (Fork Analyser) has one goal: to make it a hundred times easier for developers to navigate GitHub forks.
-
 For over a decade, the github fork system has been extremely cumbersome to use.
-OSA generates AI summaries and tags them based on.
+
+OSA (Fork Analyser) has one goal: to screw the github fork system, and instead make it a hundred times easier for developers to navigate GitHub forks.
+
+OSA generates AI summaries (using openAI chatgpt model for now) and tags them based on a bunch of tags.
 
 This is my first time starting an open source project, so things might be a bit rough at first, but if you have any suggestions on how to improve the project or would like to contribute, I gladly welcome you ❤️
 
 ![OSA analysing yt-dlp's forks: a results table listing each fork's star count, how far ahead/behind upstream it is, a "what it changed" and "why it exists" label, and a one-line summary](assets/docs/example-results.png)
+
+# ⚠️ Important Disclaimer
+
+**Please read before using OSA.**
+
+OSA uses artificial intelligence and predictive algorithms to analyse, rank and recommend open-source software repositories.
+
+### AI Accuracy
+AI-generated outputs and predictions may be inaccurate, incomplete, outdated or misleading. Users should independently verify all recommendations and analysis results.
+
+### Security Risks
+Recommended repositories, including forks, may contain malware, vulnerabilities, malicious modifications or faulty software. OSA does not guarantee the security, authenticity or integrity of any recommended repository and does not perform a comprehensive security audit of all recommendations.
+
+### Third-Party Software
+Recommendations do not constitute endorsements, certifications or guarantees by OSA or its maintainers. Third-party repositories remain under the control of their respective owners and contributors.
+
+### User Responsibility
+Users are responsible for independently reviewing, verifying and assessing repositories before downloading, installing, executing or relying upon them.
+
+### Limitation of Warranty and Liability
+OSA is provided "AS IS" and "AS AVAILABLE", without warranties of any kind, to the maximum extent permitted by applicable law.
+
+To the maximum extent permitted by applicable law, OSA's maintainers and contributors disclaim liability for damages arising from the use of OSA, its AI-generated outputs or third-party software recommendations.
+
+Nothing in this disclaimer excludes or limits liability that cannot legally be excluded or limited.
 
 # how to use?
 
@@ -64,6 +90,7 @@ for more.
 
 # Disclaimers
 1. while the current codebase is created and refactored with Claude Code, it was originally handwritten
+2. the cute robot mascot was handdrawn, not AI-generated !!!
 2. the current website design is heavily inspired by [useful forks](https://useful-forks.github.io/)
 
 # NEXT PROJECT GOALS

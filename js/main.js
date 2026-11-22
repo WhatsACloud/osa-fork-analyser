@@ -1,6 +1,6 @@
 import { TOTAL_STEPS, analyseFork } from './analysis/analyse.js';
 import { FORK_CHECK_CONCURRENCY, MAX_FORKS, MAX_FORKS_SCANNED, SOURCE_URL } from './config.js';
-import { downloadCsv, forksToCsv } from './csv.js';
+import { downloadCsv, forksToCsv, forksToFullCsv, parseForksCsv } from './csv.js';
 import { $ } from './dom.js';
 import { GitHubClient } from './github/client.js';
 import { findForksAhead, lookupFork } from './github/forks.js';
@@ -22,6 +22,9 @@ const ui = {
   analyseBtn: $('#analyse-btn'),
   stopBtn: $('#stop-btn'),
   csvBtn: $('#csv-btn'),
+  csvFullBtn: $('#csv-full-btn'),
+  loadCsvBtn: $('#load-csv-btn'),
+  loadCsvInput: $('#load-csv-input'),
   clearBtn: $('#clear-btn'),
   status: $('#status'),
   summary: $('#list-summary'),
@@ -96,6 +99,8 @@ function renderNow() {
   ui.stopBtn.hidden = !analysing;
   ui.stopBtn.disabled = state.abort?.signal.aborted ?? false;
   ui.csvBtn.disabled = !hasForks;
+  ui.csvFullBtn.disabled = !hasForks;
+  ui.loadCsvBtn.disabled = state.busy !== null;
   ui.clearBtn.disabled = state.busy !== null || !hasForks;
 
   const analysed = state.forks.filter((f) => state.results[repoKey(f.fullName)]?.status === 'complete');
@@ -318,10 +323,57 @@ function stopAnalysis() {
   render();
 }
 
-function exportCsv() {
+function exportCsv(full) {
   const name = (state.repo || 'forks').replace(/[^A-Za-z0-9_.-]+/g, '_');
   const date = new Date().toISOString().slice(0, 10);
-  downloadCsv(`${name}-forks-${date}.csv`, forksToCsv(state.forks, state.results));
+  const csv = full ? forksToFullCsv(state.forks, state.results) : forksToCsv(state.forks, state.results);
+  downloadCsv(`${name}-forks${full ? '-full' : ''}-${date}.csv`, csv);
+}
+
+/** Loads a CSV previously saved with either Download button and merges it into the list. */
+async function importCsv(event) {
+  const file = event.target.files?.[0];
+  event.target.value = ''; // so picking the same file again still fires 'change'
+  if (!file) return;
+
+  let parsed;
+  try {
+    parsed = parseForksCsv(await file.text());
+  } catch (err) {
+    setStatus(`Could not read ${file.name}: ${err.message}`, 'error');
+    return;
+  }
+  if (!parsed.forks.length) {
+    setStatus(`${file.name} had no fork rows OSA recognised.`, 'error');
+    return;
+  }
+
+  let added = 0;
+  for (const fork of parsed.forks) {
+    if (!state.forks.some((f) => repoKey(f.fullName) === repoKey(fork.fullName))) {
+      state.forks.push(fork);
+      added++;
+    }
+  }
+
+  let loaded = 0;
+  let storageFull = false;
+  for (const [key, result] of Object.entries(parsed.results)) {
+    state.results[key] = result;
+    if (result.status === 'complete') {
+      loaded++;
+      if (!resultsStore.set(key, result)) storageFull = true;
+    }
+  }
+
+  if (!state.repo) {
+    state.repo = parsed.forks[0].parent;
+    ui.repoInput.value = state.repo;
+  }
+  saveSession();
+  const summary = `Loaded ${file.name}: ${added} new fork${added === 1 ? '' : 's'} added, ${loaded} result${loaded === 1 ? '' : 's'} loaded.`;
+  setStatus(storageFull ? `${summary} Browser storage is full: some loaded results may be lost on reload.` : summary, storageFull ? 'error' : 'info');
+  render();
 }
 
 function clearList() {
@@ -356,7 +408,10 @@ ui.repoForm.addEventListener('submit', fetchForks);
 ui.addForm.addEventListener('submit', addFork);
 ui.analyseBtn.addEventListener('click', analyseAll);
 ui.stopBtn.addEventListener('click', stopAnalysis);
-ui.csvBtn.addEventListener('click', exportCsv);
+ui.csvBtn.addEventListener('click', () => exportCsv(false));
+ui.csvFullBtn.addEventListener('click', () => exportCsv(true));
+ui.loadCsvBtn.addEventListener('click', () => ui.loadCsvInput.click());
+ui.loadCsvInput.addEventListener('change', importCsv);
 ui.clearBtn.addEventListener('click', clearList);
 window.addEventListener('beforeunload', (e) => {
   if (state.busy === 'analysing') e.preventDefault();

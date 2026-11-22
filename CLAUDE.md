@@ -33,7 +33,9 @@ tests) and the two scripts. Don't add dependencies or a build step without the u
 3. **Analyse**: queues every fork without a cached `complete` result, runs
    `settings.concurrency` (default 4, max 10) at a time. **Stop** aborts the queue; in-flight
    forks finish. Per row: ↻ re-analyse, × remove, click to expand details.
-4. **Download CSV**.
+4. **Download CSV** (minified) or **Download full data** (adds JSON columns for signals,
+   reasoning, fork creator and tools used — everything the expanded row shows). **Load CSV**
+   reads either format back in, merging rows into the current list so they can be viewed again.
 
 ## Architecture
 
@@ -42,7 +44,7 @@ js/main.js                 app state + all button handlers; the only orchestrato
 js/config.js               every tunable constant (limits, model, pricing, SOURCE_URL)
 js/queue.js                mapConcurrent(items, limit, worker, {signal}) + sleep
 js/store.js                the ONLY module touching localStorage (osa.settings/results/session/theme)
-js/csv.js                  forksToCsv, toCsv, downloadCsv
+js/csv.js                  forksToCsv/forksToFullCsv, parseForksCsv, toCsv/parseCsv, downloadCsv
 js/dom.js                  el() builder (text nodes only) and $()
 js/github/client.js        GitHubClient: rest / restOrNull / graphql, call counter, rate limits, retries
 js/github/forks.js         findForksAhead (discovery), lookupFork (manual add); ForkRecord typedef

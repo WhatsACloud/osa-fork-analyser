@@ -30,6 +30,11 @@
       </div>
     </header>
 
+    <div class="disclaimer-banner" role="note">
+      ⚠️ AI can make mistakes. Recommendations are not security-verified and may include malicious
+      or faulty repositories. Independently verify all results before use.
+    </div>
+
     <main class="container">
       <form id="repo-form" class="searchbar" autocomplete="off">
         <button type="button" class="searchbar-icon" data-open-settings aria-label="Settings">⚙</button>
@@ -51,6 +56,9 @@
           <button type="button" id="analyse-btn" class="primary">Analyse</button>
           <button type="button" id="stop-btn" class="danger" hidden>Stop</button>
           <button type="button" id="csv-btn">Download CSV</button>
+          <button type="button" id="csv-full-btn">Download full data</button>
+          <button type="button" id="load-csv-btn">Load CSV</button>
+          <input type="file" id="load-csv-input" accept=".csv,text/csv" hidden />
           <button type="button" id="clear-btn">Clear list</button>
         </div>
       </div>
